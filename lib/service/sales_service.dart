@@ -27,7 +27,7 @@ class SalesService {
 
   void addToCart(String productId, {int quantity = 1}) {
     if (quantity <= 0) {
-      throw ArgumentError('The quantity must be greater than zero.');
+      throw Exception('The quantity must be greater than zero.');
     }
     Product product = inventory.getProduct(productId);
     List<CartItem> items = _cart.items;
@@ -50,49 +50,32 @@ class SalesService {
 
   void updateCartQuantity(String productId, int quantity) {
     if (quantity < 0) {
-      throw ArgumentError('The quantity cannot be negative.');
+      throw Exception('The quantity cannot be negative.');
     }
-    if (quantity == 0) {
-      removeFromCart(productId);
-      return;
-    }
-
     List<CartItem> items = _cart.items;
     for (int index = 0; index < items.length; index++) {
       CartItem item = items[index];
       if (item.product.id == productId) {
-        Product product = inventory.getProduct(productId);
-        _checkStock(product, quantity);
-        items[index] = CartItem(product: item.product, quantity: quantity);
+        if (quantity == 0) {
+          items.removeAt(index);
+        } else {
+          Product product = inventory.getProduct(productId);
+          _checkStock(product, quantity);
+          items[index] = CartItem(product: item.product, quantity: quantity);
+        }
         _cart = Cart(items: items);
         return;
       }
     }
-    throw StateError('This product is not in the cart.');
-  }
-
-  void removeFromCart(String productId) {
-    List<CartItem> items = _cart.items;
-    for (int index = 0; index < items.length; index++) {
-      if (items[index].product.id == productId) {
-        items.removeAt(index);
-        _cart = Cart(items: items);
-        return;
-      }
-    }
-    throw StateError('This product is not in the cart.');
-  }
-
-  void clearCart() {
-    _cart = Cart();
+    throw Exception('This product is not in the cart.');
   }
 
   Sale checkout({required int cashReceivedCents}) {
     if (_cart.isEmpty) {
-      throw StateError('The cart is empty.');
+      throw Exception('The cart is empty.');
     }
     if (cashReceivedCents < _cart.totalCents) {
-      throw ArgumentError('The cash received must cover the cart total.');
+      throw Exception('The cash received must cover the cart total.');
     }
 
     List<SaleItem> receiptItems = [];
@@ -117,40 +100,16 @@ class SalesService {
     inventory.deductStock(_cart);
     _sales.add(sale);
     _nextSaleNumber = _nextSaleNumber + 1;
-    clearCart();
+    _cart = Cart();
     return sale;
-  }
-
-  Sale getSale(String id) {
-    for (Sale sale in _sales) {
-      if (sale.id == id) {
-        return sale;
-      }
-    }
-    throw StateError('Sale $id does not exist.');
-  }
-
-  int revenueForDate(DateTime date) {
-    int total = 0;
-    DateTime localDate = date.toLocal();
-
-    for (Sale sale in _sales) {
-      DateTime saleDate = sale.completedAt.toLocal();
-      if (saleDate.year == localDate.year &&
-          saleDate.month == localDate.month &&
-          saleDate.day == localDate.day) {
-        total = total + sale.totalCents;
-      }
-    }
-    return total;
   }
 
   void _checkStock(Product product, int quantity) {
     if (!product.isAvailable) {
-      throw StateError('${product.name} is not available for sale.');
+      throw Exception('${product.name} is not available for sale.');
     }
     if (quantity > product.stockQuantity) {
-      throw StateError('Not enough stock for ${product.name}.');
+      throw Exception('Not enough stock for ${product.name}.');
     }
   }
 }
