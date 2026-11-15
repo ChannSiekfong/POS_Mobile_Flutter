@@ -1,9 +1,4 @@
-# pos_mobile
+# POS Mobile
 
-## Getting Started
-
-flutter create --platforms=web .
-
-flutter pub get
-
-flutter run
+## Test
+- flutter test
