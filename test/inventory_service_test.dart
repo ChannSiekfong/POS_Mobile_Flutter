@@ -1,4 +1,6 @@
 import 'package:test/test.dart';
+import 'package:pos_mobile/model/cart.dart';
+import 'package:pos_mobile/model/cart_item.dart';
 import 'package:pos_mobile/model/product.dart';
 import 'package:pos_mobile/service/inventory_service.dart';
 
@@ -56,5 +58,16 @@ void main() {
     expect(updated.name, 'Spring Water');
     expect(updated.priceCents, 100);
     expect(updated.isAvailable, false);
+  });
+
+  test('deducts all remaining units down to zero', () {
+    inventory.addProduct(product(stock: 2));
+
+    Cart cart = Cart(
+      items: [CartItem(product: inventory.getProduct('water'), quantity: 2)],
+    );
+    inventory.deductStock(cart);
+
+    expect(inventory.getProduct('water').stockQuantity, 0);
   });
 }
